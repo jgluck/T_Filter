@@ -1,0 +1,14 @@
+{
+  "manifest_version": 2,
+
+  "name": "T Filter",
+  "description": "An extension that filters spam out of Twitch chat.",
+  "version": "1.0",
+
+  "content_scripts": [
+    {
+        "matches": ["http://www.twitch.tv/*"],
+        "js": ["twitchChatGlue.js"]
+    }
+  ]
+}
