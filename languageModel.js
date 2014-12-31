@@ -276,7 +276,7 @@ function ngramLast(ngram) {
  */
 function NgramModel(n) {
     this.n = n;
-    this.condProbDist = new CondSmoothedProbDist(1.0);
+    this.condProbDist = new CondSmoothedProbDist(0.5);
 }
 
 /**
@@ -303,7 +303,7 @@ NgramModel.prototype.logProb = function(words) {
     var prob = 0.0;
     for (var i = 0; i < ngrams.length; i++) {
         var context = ngramContext(ngrams[i]);
-        prob += this.condProbDist.logProb(context, ngramLast(ngrams[i]));
+        prob += this.condProbDist.logCondProb(context, ngramLast(ngrams[i]));
     }
     return prob;
 };
