@@ -9,9 +9,15 @@ var shouldFilter = true;
 var shouldTrain = true;
 
 init();
+var ngramModel = new NgramModel(2);
+registerTrainingFunction(function(text) {
+    ngramModel.update(preprocess(text));
+});
+
 // Toy filter to showcase that this sort of works.
 registerFilter(function(text) {
-	return text.toLowerCase().indexOf("lol") < 0;
+    return false;
+	//return text.toLowerCase().indexOf("lol") < 0;
 });
 
 /**
@@ -45,7 +51,7 @@ function toggleFilter() {
  * Registers a filter callback. Note: I'm not sure this is
  * the best API to offer you, but it was easy for now.
  *
- * @param function that takes text from a message and 
+ * @param fn function that takes text from a message and 
  * 	returns true if the message should be filtered, false
  * 	otherwise.
  */
@@ -57,6 +63,7 @@ function registerFilter(fn) {
  * Registers a training callback (not supported yet)
  */
 function registerTrainingFunction(fn) {
+    console.log("THIS WAS CALLED");
 	train = fn;
 }
 
@@ -64,7 +71,7 @@ function registerTrainingFunction(fn) {
  * Gets the message text from a "chat-line" node and
  * returns it if it exists. Otherwise returns an empty string.
  *
- * @param DOM node of class "chat-line"
+ * @param chatLine DOM node of class "chat-line"
  * @return string of message text if it exists, otherwise
  *	an empty string.
  */
@@ -77,20 +84,60 @@ function getChatLineText(chatLine) {
 }
 
 /**
+ * Change chat line text. Basically just for debugging.
+ *
+ * @param chatLine DOM node of class "chat-line"
+ */
+function setChatLineText(chatLine, string) {
+	var message = chatLine.getElementsByClassName("message")[0];
+	if (message && message.textContent) {
+		message.textContent = string;
+	}
+}
+
+/**
+ * Check if a chat line is marked.
+ *
+ * @param chatLine DOM node of class "chat-line"
+ */
+function marked(chatLine) {
+    console.log(chatLine);
+	return chatLine.getElementsByClassName("processed")[0];
+}
+
+/**
+ * Mark a chat line so that it isn't processed again.
+ *
+ * @param chatLine DOM node of class "chat-line"
+ */
+function markChatLine(chatLine) {
+    var node = document.createElement("span");
+    node.setAttribute("class", "processed");
+    chatLine.appendChild(node);
+}
+
+function onChangeCallback() {
+    if (shouldFilter && filter) {
+		for (var i = 0; i < lines.length; i++) {
+            if (!marked(lines[i])) {
+                var text = getChatLineText(lines[i]);
+                setChatLineText(lines[i], "(" + ngramModel.prob(preprocess(text)) + ") " + text);
+                train(text);
+				if (filter(text)) {
+					lines[i].parentNode.removeChild(lines[i]);
+				}
+                markChatLine(lines[i]);
+            }
+		}
+	}
+}
+
+/**
  * Potentially filters messages out of Twitch chat whenever
  * one is received.
  */
 function initFiltration() {
-	var observer = new MutationObserver(function(mutations) {
-		if (shouldFilter && filter) {
-			for (var i = 0; i < lines.length; i++) {
-				var text = getChatLineText(lines[i]);
-				if (filter(text)) {
-					lines[i].parentNode.removeChild(lines[i]);
-				}
-			}
-		}
-	});
+	var observer = new MutationObserver(onChangeCallback);
 	observer.observe(chatContainer, {childList: true});
 }
 
@@ -101,14 +148,5 @@ function initFiltration() {
  * deprecated.
  */
 function initFiltrationLegacy() {
-	chatContainer.addEventListener("DOMNodeInserted", function() {
-		if (shouldFilter && filter) {
-			for (var i = 0; i < lines.length; i++) {
-				var text = getChatLineText(lines[i]);
-				if (filter(text)) {
-					lines[i].parentNode.removeChild(lines[i]);
-				}
-			}
-		}
-	});
+	chatContainer.addEventListener("DOMNodeInserted", onChangeCallback);
 }
