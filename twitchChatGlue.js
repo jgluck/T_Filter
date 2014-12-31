@@ -118,18 +118,18 @@ function markChatLine(chatLine) {
 
 function onChangeCallback() {
     if (shouldFilter && filter) {
-		for (var i = 0; i < lines.length; i++) {
+        for (var i = 0; i < lines.length; i++) {
             if (!marked(lines[i])) {
                 var text = getChatLineText(lines[i]);
                 setChatLineText(lines[i], "(" + ngramModel.prob(preprocess(text)) + ") " + text);
                 train(text);
-				if (filter(text)) {
-					lines[i].parentNode.removeChild(lines[i]);
-				}
+                if (filter(text)) {
+                    lines[i].parentNode.removeChild(lines[i]);
+                }
                 markChatLine(lines[i]);
             }
-		}
-	}
+        }
+    }
 }
 
 /**
