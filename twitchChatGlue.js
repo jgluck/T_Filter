@@ -17,34 +17,34 @@ registerTrainingFunction(function(text) {
 // Toy filter to showcase that this sort of works.
 registerFilter(function(text) {
     return false;
-	//return text.toLowerCase().indexOf("lol") < 0;
+    //return text.toLowerCase().indexOf("lol") < 0;
 });
 
 /**
  * Set up all of the global state.
  */
 function init() {
-	// Chat takes a while to load, I'm not  100% it happens before
-	// an onLoad callback would get called, and I want to avoid
-	// jquery unless we absolutely need it.
-	window.setTimeout(function () {
-		if (!chatContainer) {
-			chatContainer = document.getElementsByClassName("chat-lines")[0];
-			lines = document.getElementsByClassName("chat-line");
-			if (!chatContainer || !lines) {
-				init();
-			} else {
-				initFiltration();
-			}
-		}
-	}, INIT_RETRY_PERIOD);
+    // Chat takes a while to load, I'm not  100% it happens before
+    // an onLoad callback would get called, and I want to avoid
+    // jquery unless we absolutely need it.
+    window.setTimeout(function () {
+        if (!chatContainer) {
+            chatContainer = document.getElementsByClassName("chat-lines")[0];
+            lines = document.getElementsByClassName("chat-line");
+            if (!chatContainer || !lines) {
+                init();
+            } else {
+                initFiltration();
+            }
+        }
+    }, INIT_RETRY_PERIOD);
 }
 
 /**
  * Turn filtration on/off.
  */
 function toggleFilter() {
-	shouldFilter = !shouldFilter;
+    shouldFilter = !shouldFilter;
 }
 
 /**
@@ -52,11 +52,11 @@ function toggleFilter() {
  * the best API to offer you, but it was easy for now.
  *
  * @param fn function that takes text from a message and 
- * 	returns true if the message should be filtered, false
- * 	otherwise.
+ *     returns true if the message should be filtered, false
+ *     otherwise.
  */
 function registerFilter(fn) {
-	filter = fn;
+    filter = fn;
 }
 
 /**
@@ -64,7 +64,7 @@ function registerFilter(fn) {
  */
 function registerTrainingFunction(fn) {
     console.log("THIS WAS CALLED");
-	train = fn;
+    train = fn;
 }
 
 /**
@@ -73,14 +73,14 @@ function registerTrainingFunction(fn) {
  *
  * @param chatLine DOM node of class "chat-line"
  * @return string of message text if it exists, otherwise
- *	an empty string.
+ *    an empty string.
  */
 function getChatLineText(chatLine) {
-	var message = chatLine.getElementsByClassName("message")[0];
-	if (message && message.textContent) {
-		return message.textContent;
-	}
-	return "";
+    var message = chatLine.getElementsByClassName("message")[0];
+    if (message && message.textContent) {
+        return message.textContent;
+    }
+    return "";
 }
 
 /**
@@ -89,10 +89,10 @@ function getChatLineText(chatLine) {
  * @param chatLine DOM node of class "chat-line"
  */
 function setChatLineText(chatLine, string) {
-	var message = chatLine.getElementsByClassName("message")[0];
-	if (message && message.textContent) {
-		message.textContent = string;
-	}
+    var message = chatLine.getElementsByClassName("message")[0];
+    if (message && message.textContent) {
+        message.textContent = string;
+    }
 }
 
 /**
@@ -102,7 +102,7 @@ function setChatLineText(chatLine, string) {
  */
 function marked(chatLine) {
     console.log(chatLine);
-	return chatLine.getElementsByClassName("processed")[0];
+    return chatLine.getElementsByClassName("processed")[0];
 }
 
 /**
@@ -137,8 +137,8 @@ function onChangeCallback() {
  * one is received.
  */
 function initFiltration() {
-	var observer = new MutationObserver(onChangeCallback);
-	observer.observe(chatContainer, {childList: true});
+    var observer = new MutationObserver(onChangeCallback);
+    observer.observe(chatContainer, {childList: true});
 }
 
 /**
@@ -148,5 +148,5 @@ function initFiltration() {
  * deprecated.
  */
 function initFiltrationLegacy() {
-	chatContainer.addEventListener("DOMNodeInserted", onChangeCallback);
+    chatContainer.addEventListener("DOMNodeInserted", onChangeCallback);
 }
