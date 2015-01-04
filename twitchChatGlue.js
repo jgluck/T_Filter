@@ -9,16 +9,63 @@ var shouldFilter = true;
 var shouldTrain = true;
 
 init();
-var ngramModel = new NgramModel(2);
-registerTrainingFunction(function(text) {
-    ngramModel.update(preprocess(text));
-});
+
+// Examples
 
 // Toy filter to showcase that this sort of works.
-registerFilter(function(text) {
+//registerFilter(function(text) {
+//    return text.toLowerCase().indexOf("lol") < 0;
+//});
+
+// Simple filters can be made with a closure
+// registerFilter(makeR9kFilter(60 * 1000 * 5, true));
+function makeR9kFilter(blockTimeout, doPreprocessing) {
+    var isNotOriginal = {};
+    return function(text) {
+        if (doPreprocessing) {
+            text = preprocess(text).join(" ");
+        }
+        if (!isNotOriginal[text]) {
+            isNotOriginal[text] = true;
+            window.setTimeout(function() {
+                delete isNotOriginal[text];
+            }, blockTimeout);
+            return false;
+        }
+        return true;
+    };
+}
+
+// Slightly more complicated filter with a class
+// I think this roughly equivalent to the "filter out low information messages" idea
+function ProbabilityFilter() {
+    this.languageModel = new NgramModel(2);
+    this.numMessages = 0;
+    this.probNum = 0.0;
+    this.minTrainingMessages = 10;
+}
+
+ProbabilityFilter.prototype.train = function(text) {
+    var tokens = preprocess(text);
+    this.languageModel.update(tokens);
+    this.numMessages++;
+    this.probNum += this.languageModel.logProb(tokens);
+};
+
+ProbabilityFilter.prototype.filter = function(text) {
+    if (this.numMessages > this.minTrainingMessages) {
+        var tokens = preprocess(text);
+        return this.languageModel.logProb(tokens) >= this.probNum - Math.log(this.numMessages);
+    }
     return false;
-    //return text.toLowerCase().indexOf("lol") < 0;
-});
+};
+
+var probFilter = new ProbabilityFilter();
+function registerFilterObject(filterObj) {
+    registerTrainingFunction(filterObj.train.bind(filterObj));
+    registerFilter(filterObj.filter.bind(filterObj));
+}
+registerFilterObject(probFilter);
 
 /**
  * Set up all of the global state.
@@ -63,7 +110,6 @@ function registerFilter(fn) {
  * Registers a training callback (not supported yet)
  */
 function registerTrainingFunction(fn) {
-    console.log("THIS WAS CALLED");
     train = fn;
 }
 
@@ -101,8 +147,10 @@ function setChatLineText(chatLine, string) {
  * @param chatLine DOM node of class "chat-line"
  */
 function marked(chatLine) {
-    console.log(chatLine);
-    return chatLine.getElementsByClassName("processed")[0];
+    if (chatLine) {
+        return chatLine.getElementsByClassName("processed")[0];
+    }
+    return true;
 }
 
 /**
@@ -112,19 +160,29 @@ function marked(chatLine) {
  */
 function markChatLine(chatLine) {
     var node = document.createElement("span");
-    node.setAttribute("class", "processed");
-    chatLine.appendChild(node);
+    if (chatLine && node) {
+        node.setAttribute("class", "processed");
+        chatLine.appendChild(node);
+    }
 }
 
+/**
+ * Trains on unseen chat lines and removes them if the filter determines
+ * they should be.
+ */
 function onChangeCallback() {
-    if (shouldFilter && filter) {
+    if (train || (shouldFilter && filter)) {
         for (var i = 0; i < lines.length; i++) {
             if (!marked(lines[i])) {
                 var text = getChatLineText(lines[i]);
-                setChatLineText(lines[i], "(" + ngramModel.prob(preprocess(text)) + ") " + text);
-                train(text);
-                if (filter(text)) {
-                    lines[i].parentNode.removeChild(lines[i]);
+                //setChatLineText(lines[i], "(" + ngramModel.prob(preprocess(text)) + ") " + text);
+                if (train) {
+                    train(text);
+                }
+                if (shouldFilter && filter) {
+                    if (filter(text)) {
+                        lines[i].parentNode.removeChild(lines[i]);
+                    }
                 }
                 markChatLine(lines[i]);
             }
