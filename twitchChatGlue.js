@@ -49,13 +49,15 @@ ProbabilityFilter.prototype.train = function(text) {
     var tokens = preprocess(text);
     this.languageModel.update(tokens);
     this.numMessages++;
-    this.probNum += this.languageModel.logProb(tokens);
+    this.probNum += this.languageModel.prob(tokens);
 };
 
 ProbabilityFilter.prototype.filter = function(text) {
     if (this.numMessages > this.minTrainingMessages) {
         var tokens = preprocess(text);
-        return this.languageModel.logProb(tokens) >= this.probNum - Math.log(this.numMessages);
+        // Filter if the probability of the message is greater than the average
+        // probability of all messages seen
+        return this.languageModel.prob(tokens) >= this.probNum / this.numMessages;
     }
     return false;
 };
